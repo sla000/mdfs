@@ -1,0 +1,14 @@
+# mdfs
+
+Сборка libgfs
+
+$ git clone https://github.com/jcushman/libgfshare.git
+$ sudo apt-get install autoconf libtool
+$ ./make-dist.sh
+$ tar zxvf ... $DIR
+$ cd $DIR
+$ ./configure && make -j4
+
+Утилиты gfsplit, gfcombine
+
+    * Работают хорошо до 100 мб. На 500 все виснет, видимо не хватает оперативы или еще чего. Для целей хранения музыки - большего не надо.
