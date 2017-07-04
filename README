@@ -12,3 +12,7 @@ $ ./configure && make -j4
 Утилиты gfsplit, gfcombine
 
     * Работают хорошо до 100 мб. На 500 все виснет, видимо не хватает оперативы или еще чего. Для целей хранения музыки - большего не надо.
+
+https://parallel.ru/krukov/lec4.html
+http://w27001.vdi.mipt.ru/wp/wp-content/uploads/2016/03/diplom.pdf
+
