@@ -16,3 +16,5 @@ $ ./configure && make -j4
 https://parallel.ru/krukov/lec4.html
 http://w27001.vdi.mipt.ru/wp/wp-content/uploads/2016/03/diplom.pdf
 
+Удалить порт
+fuser -k -n tcp 4545

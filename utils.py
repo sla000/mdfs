@@ -21,14 +21,24 @@ def createPkt(len, buf):
     return hdr + buf
 
 class Daemon():
+    def __init__(self):
+        self.pid = None
     def daemonize(self):
         pid = os.fork()
         if pid == 0:
-            self.main()
+            try:
+                self.main()
+            except:
+                pass
+            finally:
+                self.onexit()
         else:
+            self.pid = pid
             return pid
-
-
+    def kill(self):
+        os.kill(self.pid, 15)
+    def onexit(self):
+        pass
 
     def main(self):
         raise Exception("Not implemented.")

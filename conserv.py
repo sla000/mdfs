@@ -49,20 +49,49 @@ class ConnectionServerHandler(TcpBaseHandler):
     def handleConnection(self, sock, size, buf):
         print 'size = ' + str(size)
         print "buf: " + str(buf)
+        f = open('aa.log' , 'a+')
+        f.write(str(buf))
+        f.close()
 
+class ReuseTcpServer(SocketServer.TCPServer):
+    allow_reuse_address = True
 
 class ConnectionServer(Daemon):
     def __init__(self):
         self.addr = (getSelfIP(), CONN_SERV_PORT)
+        Daemon.__init__(self)
+        SocketServer.TCPServer.allow_reuse_address = True
+        self.server = SocketServer.TCPServer(self.addr, ConnectionServerHandler)
 
     def main(self):
-        server = SocketServer.TCPServer(self.addr, ConnectionServerHandler)
+        self.server.serve_forever()
+    def onexit(self):
+        self.server.server_close()
+
+
+class TopServerHandler(TcpBaseHandler):
+    def handleConnection(self, sock, size, buf):
+        print 'size = ' + str(size)
+        print "buf: " + str(buf)
+
+
+class TopServer(Daemon):
+    def __init__(self, ipConnServ, ip, port):
+        self.addr = (ip, port)
+        Daemon.__init__(self)
+        self.connServClient = ConnectionServerClient(ipConnServ, ip, port)
+
+    def main(self):
+        self.connServClient.daemonize()
+        SocketServer.TCPServer.allow_reuse_address = True
+        server = SocketServer.TCPServer(self.addr, TopServerHandler)
         server.serve_forever()
 
-
 class ConnectionServerClient(Daemon):
-    def __init__(self):
-        self.addr = (self.getConnServIP(), CONN_SERV_PORT)
+    def __init__(self, ipConnServ, ip, port):
+        self.addr = (ipConnServ, CONN_SERV_PORT)
+        self.ip = ip
+        self.port = port
     def getConnServIP(self):
         # TODO: fix it
         return getSelfIP()
@@ -70,7 +99,12 @@ class ConnectionServerClient(Daemon):
         while True:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect(self.addr)
-            sock.sendall(createPkt(6, "alive"))
+
+            pkt = 'On' + '*'
+            pkt += self.ip + ':'
+            pkt += str(self.port)
+
+            sock.sendall(createPkt(len(pkt), pkt))
             time.sleep(OFFLINE_TIME)
 
 
