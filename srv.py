@@ -1,10 +1,12 @@
 #!/usr/bin/python
 
 from conserv import *
+from topserver import *
 
 s = ConnectionServer()
 s.daemonize()
 
-c1 = TopServer(getSelfIP(), getSelfIP(), 8000)
-c1.main()
+topManager = TopServerManager(2)
+topManager.run()
 
+time.sleep(100)

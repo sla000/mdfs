@@ -5,7 +5,9 @@ import sys
 import time
 
 from utils import *
+import uuid
 
+from requests import *
 OFFLINE_TIME = 5
 
 CONN_SERV_PORT=4545
@@ -24,9 +26,6 @@ class TcpBaseHandler(SocketServer.BaseRequestHandler):
     override the handle() method to implement communication to the
     client.
     """
-
-
-
     def handle(self):
         signature = self.request.recv(2)
         size = -1
@@ -45,16 +44,38 @@ class TcpBaseHandler(SocketServer.BaseRequestHandler):
         raise Exception("Not implemented")
 
 
-class ConnectionServerHandler(TcpBaseHandler):
-    def handleConnection(self, sock, size, buf):
-        print 'size = ' + str(size)
-        print "buf: " + str(buf)
-        f = open('aa.log' , 'a+')
-        f.write(str(buf))
-        f.close()
 
-class ReuseTcpServer(SocketServer.TCPServer):
-    allow_reuse_address = True
+
+GID = uuid.uuid4().hex
+topInfo = { }
+
+class ConnectionServerHandler(TcpBaseHandler):
+    def getGuidForTop(self):
+        return GID
+
+    def handleConnection(self, sock, size, buf):
+        req = buf.split('*')[0]
+        if req == 'PP':
+            topId = buf.split('*')[2].strip()
+            ip = buf.split('*')[1].split(':')[0]
+            port = buf.split('*')[1].split(':')[1]
+            if topId not in topInfo.keys():
+                topInfo[topId] = Neighbour(ip, int(port), self.getGuidForTop())
+            else:
+                topInfo[topId].ip = ip
+                topInfo[topId].port = int(port)
+
+        if req == GetNeighboursReq.SIG:
+            topId = GetNeighboursReq().parse(buf)
+
+
+            ip, port, gid = topInfo[topId] 
+            neighbours = [ ]
+            for key in topInfo.keys():
+                if topInfo[key].gid == topInfo[topId].gid:
+                    neighbours.append(topInfo[key])
+                    
+            self.request.sendall(GetNeighboursReqA().pkt(neighbours))
 
 class ConnectionServer(Daemon):
     def __init__(self):
@@ -69,40 +90,30 @@ class ConnectionServer(Daemon):
         self.server.server_close()
 
 
-class TopServerHandler(TcpBaseHandler):
-    def handleConnection(self, sock, size, buf):
-        print 'size = ' + str(size)
-        print "buf: " + str(buf)
-
-
-class TopServer(Daemon):
-    def __init__(self, ipConnServ, ip, port):
-        self.addr = (ip, port)
-        Daemon.__init__(self)
-        self.connServClient = ConnectionServerClient(ipConnServ, ip, port)
-
-    def main(self):
-        self.connServClient.daemonize()
-        SocketServer.TCPServer.allow_reuse_address = True
-        server = SocketServer.TCPServer(self.addr, TopServerHandler)
-        server.serve_forever()
-
 class ConnectionServerClient(Daemon):
-    def __init__(self, ipConnServ, ip, port):
+    def __init__(self, ipConnServ, ip, port, ID):
         self.addr = (ipConnServ, CONN_SERV_PORT)
         self.ip = ip
         self.port = port
+        self.ID = ID
     def getConnServIP(self):
         # TODO: fix it
         return getSelfIP()
+    def getNeighbours(self):
+        #TODO
+        pass
+
+        
     def main(self):
         while True:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect(self.addr)
 
-            pkt = 'On' + '*'
+            pkt = 'PP' + '*'
             pkt += self.ip + ':'
             pkt += str(self.port)
+            pkt += '*' + str(self.ID)
+            print pkt
 
             sock.sendall(createPkt(len(pkt), pkt))
             time.sleep(OFFLINE_TIME)
