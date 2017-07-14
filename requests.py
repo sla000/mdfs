@@ -46,7 +46,7 @@ class GetNeighboursReqA(Pkt):
         return map(lambda x: Neighbour.fromStr(x), nghList)
     # neighbourList = [ (ip, port, gid) ]
     def createInternal(self, neighbourList):
-        nstrList = map(lambda (ip, port, gid) :  str(Neighbour(ip, port, gid)), neighbourList)
+        nstrList = map(lambda neghbour :  str(neghbour), neighbourList)
         return '#'.join(nstrList)
         
         

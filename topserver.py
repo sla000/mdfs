@@ -20,6 +20,7 @@ class TopServer(Daemon):
         self.connServClient = ConnectionServerClient(ipConnServ, ip, port, self.ID)
 
     def main(self):
+        print 'TopServer.main'
         self.connServClient.daemonize()
         SocketServer.TCPServer.allow_reuse_address = True
         server = SocketServer.TCPServer(self.addr, TopServerHandler)

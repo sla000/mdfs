@@ -68,13 +68,13 @@ class ConnectionServerHandler(TcpBaseHandler):
         if req == GetNeighboursReq.SIG:
             topId = GetNeighboursReq().parse(buf)
 
-
-            ip, port, gid = topInfo[topId] 
             neighbours = [ ]
             for key in topInfo.keys():
-                if topInfo[key].gid == topInfo[topId].gid:
+                if topInfo[key].gid == topInfo[topId].gid and key != topId:
                     neighbours.append(topInfo[key])
                     
+            print neighbours
+            print GetNeighboursReqA().pkt(neighbours)
             self.request.sendall(GetNeighboursReqA().pkt(neighbours))
 
 class ConnectionServer(Daemon):
@@ -100,8 +100,27 @@ class ConnectionServerClient(Daemon):
         # TODO: fix it
         return getSelfIP()
     def getNeighbours(self):
-        #TODO
-        pass
+        print "Get negihbours"
+        req = GetNeighboursReq()
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect(self.addr)
+        sock.sendall(req.pkt(self.ID))
+        
+        md = sock.recv(2)
+        print md
+        szStr = sock.recv(4)
+        print len(szStr)
+        sz = struct.unpack('<I', szStr)
+
+        buf = sock.recv(sz[0])
+        nlist = GetNeighboursReqA().parse(buf)
+        for n in nlist:
+            print str(n)
+        print "Get negihbours end"
+        
+        
+
 
         
     def main(self):
