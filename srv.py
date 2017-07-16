@@ -6,7 +6,7 @@ from topserver import *
 s = ConnectionServer()
 s.daemonize()
 
-topManager = TopServerManager(3)
+topManager = TopServerManager(100)
 topManager.run()
 
 time.sleep(1)

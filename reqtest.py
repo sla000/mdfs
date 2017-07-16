@@ -10,6 +10,8 @@ s = GetNeighboursReqA().create( nlist)
 
 nlist = GetNeighboursReqA().parse(s)
 assert GetNeighboursReqA().create(nlist) == s, "Failed neighbour test"
-print GetNeighboursReqA().pkt(nlist)
 
+s = TopServerOnlineReq().create('10.10.10.10', 8000, uuid.uuid4().hex) 
+ip, port, ID = TopServerOnlineReq().parse(s)
+assert  TopServerOnlineReq().create(ip, port, ID) == s, "Failed TopServerOnlineReq test"
 print "Test ok" 

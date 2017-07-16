@@ -49,5 +49,19 @@ class GetNeighboursReqA(Pkt):
         nstrList = map(lambda neghbour :  str(neghbour), neighbourList)
         return '#'.join(nstrList)
         
+class TopServerOnlineReq(Pkt):
+    SIG='TopServerOnlineReq'
+    def __init__(self):
+        self.SIG = TopServerOnlineReq.SIG
+    def parseInternal(self, pkt):
+        tmp = pkt.split(':')
+        assert len(tmp) == 3
+        ip = tmp[0]
+        port = int(tmp[1])
+        ID = tmp[2]
+        return ip, port, ID
+    def createInternal(self, ip, port, ID):
+        return '%s:%u:%s' % (ip, port, ID)
+
         
 

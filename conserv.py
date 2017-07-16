@@ -55,10 +55,8 @@ class ConnectionServerHandler(TcpBaseHandler):
 
     def handleConnection(self, sock, size, buf):
         req = buf.split('*')[0]
-        if req == 'PP':
-            topId = buf.split('*')[2].strip()
-            ip = buf.split('*')[1].split(':')[0]
-            port = buf.split('*')[1].split(':')[1]
+        if req == TopServerOnlineReq.SIG:
+            ip, port, topId = TopServerOnlineReq().parse(buf)
             if topId not in topInfo.keys():
                 topInfo[topId] = Neighbour(ip, int(port), self.getGuidForTop())
             else:
@@ -100,7 +98,6 @@ class ConnectionServerClient(Daemon):
         # TODO: fix it
         return getSelfIP()
     def getNeighbours(self):
-        print "Get negihbours"
         req = GetNeighboursReq()
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -108,33 +105,21 @@ class ConnectionServerClient(Daemon):
         sock.sendall(req.pkt(self.ID))
         
         md = sock.recv(2)
-        print md
+        assert len(md) == 2
         szStr = sock.recv(4)
-        print len(szStr)
+        assert len(szStr) == 4
         sz = struct.unpack('<I', szStr)
 
         buf = sock.recv(sz[0])
+        assert len(buf) == sz[0]
         nlist = GetNeighboursReqA().parse(buf)
-        for n in nlist:
-            print str(n)
-        print "Get negihbours end"
-        
-        
-
-
+        return nlist
         
     def main(self):
         while True:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect(self.addr)
-
-            pkt = 'PP' + '*'
-            pkt += self.ip + ':'
-            pkt += str(self.port)
-            pkt += '*' + str(self.ID)
-            print pkt
-
-            sock.sendall(createPkt(len(pkt), pkt))
+            sock.sendall(TopServerOnlineReq().pkt(self.ip, self.port, self.ID))
             time.sleep(OFFLINE_TIME)
 
 
