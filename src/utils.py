@@ -17,7 +17,6 @@ def getSelfIP():
 
 def createPkt(len, buf):
     hdr = struct.pack("<ccI", 'm', 'd', len)
-
     return hdr + buf
 
 class Daemon():

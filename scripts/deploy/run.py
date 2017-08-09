@@ -23,5 +23,5 @@ print 'dsfsd'
 ips = Lxc.getContainersIP()
 print ips
 dep = Deployer(ips[0])
-dep.cleanContainers()
+dep.pushSrc()
 

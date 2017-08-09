@@ -1,16 +1,28 @@
 from conserv import *
 import uuid
 
-topList = { } 
+from config import *
+
+
+class Top:
+    def __init__(self):
+        self.a = 1
+
+gTop = Top()
 
 class TopServerHandler(TcpBaseHandler):
     def handleConnection(self, sock, size, buf):
         print 'size = ' + str(size)
         print "buf: " + str(buf)
         ip, port = self.server.server_address
-        top = topList[port - 8000]
-        
 
+        req = buf.split('*')[0]
+        if req == ExitReq.SIG:
+            self.stop()
+    def stop(self):
+        print 'stopping'
+        self.server.server_close()
+        os._exit(0)
 
 class TopServer(Daemon):
     def __init__(self, ipConnServ, ip, port):
@@ -26,12 +38,6 @@ class TopServer(Daemon):
         server = SocketServer.TCPServer(self.addr, TopServerHandler)
         server.serve_forever()
 
-class TopServerManager:
-    def __init__(self, count):
-        self.count = count
-    def run(self):
-        for i in range(self.count):
-            top = TopServer(getSelfIP(), getSelfIP(), 8000 + i)
-            top.daemonize()
-            topList[i] = top
-
+if __name__ == '__main__':
+    top = TopServer(CONN_SERV_IP, getSelfIP(), 8000)
+    top.daemonize()

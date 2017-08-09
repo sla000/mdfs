@@ -63,5 +63,15 @@ class TopServerOnlineReq(Pkt):
     def createInternal(self, ip, port, ID):
         return '%s:%u:%s' % (ip, port, ID)
 
+class ExitReq(Pkt):
+    SIG='Exit'
+    def __init__(self):
+        self.SIG =  ExitReq.SIG
+    def parseInternal(self, pkt):
+        return pkt
+    def createInternal(self):
+        return ''
+
+
         
 
