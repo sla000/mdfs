@@ -19,18 +19,6 @@ class Ssh:
         stdin, stdout, stderr = self.client.exec_command(cmd)
         return (stdout.read() + stderr.read()).strip('\n')
 
-    def __tar(self, directory):
-        assert directory != '/'
-        tarName = os.path.basename(directory.strip(os.path.sep)) + '.tar.gz'
-        if os.path.exists(tarName):
-            return tarName
-        print tarName
-        assert tarName != ''
-        cmd = 'tar zcvf %s %s' % (tarName, directory)
-        os.system(cmd)
-        print cmd
-        return tarName
-        
     def __openTransport(self):
         transport = paramiko.Transport((self.ip, self.port))
         transport.connect(username=self.user, password=self.passwd)
@@ -51,15 +39,27 @@ class Ssh:
 
 
     def __pushDir(self, directory, remote):
-        tar = self.__tar(directory)
+        directory = directory.strip(os.path.sep)
+        directory = os.path.abspath(directory)
+        base = os.path.basename(directory)
+        dirname = os.path.dirname(directory)
+        localtar = base + '.tar.gz'
+        if not os.path.exists(localtar):
+            os.system('tar zcvf %s -C %s %s' % (localtar, dirname, base))
+        
+        self.execute('rm -rf ' + remote)
         remotetar = remote + '.tar.gz'
-        self.__pushFile(tar, remotetar)
+        self.__pushFile(localtar, remotetar)
         cmd = 'tar zxvf %s -C %s' % (remotetar, os.path.dirname(remote))
-        print cmd
         self.execute(cmd)
         self.execute('rm -rf ' + remotetar)
 
+        remotebase = os.path.basename(remote)
+        if base != remotebase:
+            self.execute('mv %s %s' % (os.path.join(os.path.dirname(remote), base), remote))
+
     def push(self, local, remote):
+        assert os.path.exists(local)
         if os.path.isdir(local):
             self.__pushDir(local, remote)
         else:
@@ -107,8 +107,8 @@ class Ssh:
     def close(self):
         self.client.close()
 
-ip='10.0.3.178'
-un = 'ubuntu'
-ssh = Ssh(ip, un, un)
-ssh.connect()
-ssh.pull('/home/ubuntu/aa/bb', 'bbc')
+#ip='10.0.3.178'
+#un = 'ubuntu'
+#ssh = Ssh(ip, un, un)
+#ssh.connect()
+#ssh.pull('/home/ubuntu/aa/bb', 'bbc')
