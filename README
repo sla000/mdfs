@@ -18,3 +18,10 @@ http://w27001.vdi.mipt.ru/wp/wp-content/uploads/2016/03/diplom.pdf
 
 Удалить порт
 fuser -k -n tcp 4545
+
+Настройка lxc
+
+http://www.itzgeek.com/how-tos/linux/ubuntu-how-tos/setup-linux-container-with-lxc-on-ubuntu-16-04-14-04.html 
+https://habrahabr.ru/post/130522/
+https://serverfault.com/questions/405482/how-to-disconnect-from-lxc-console
+http://eax.me/lxc/
