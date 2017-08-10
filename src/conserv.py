@@ -6,7 +6,7 @@ import time
 
 from utils import *
 import uuid
-
+from log import *
 from requests import *
 OFFLINE_TIME = 5
 
@@ -71,14 +71,14 @@ class ConnectionServerHandler(TcpBaseHandler):
                 if topInfo[key].gid == topInfo[topId].gid and key != topId:
                     neighbours.append(topInfo[key])
                     
-            print neighbours
-            print GetNeighboursReqA().pkt(neighbours)
+            log.i(neighbours)
+            log.i(GetNeighboursReqA().pkt(neighbours))
             self.request.sendall(GetNeighboursReqA().pkt(neighbours))
 
         if req == ExitReq.SIG:
             self.stop()
     def stop(self):
-        print 'stopping'
+        log.i('stopping')
         self.server.server_close()
         os._exit(0)
 
@@ -132,5 +132,6 @@ class ConnectionServerClient(Daemon):
 
 
 if __name__ == '__main__':
+    log.init('/tmp/connserv.log')
     s = ConnectionServer()
     s.daemonize()
