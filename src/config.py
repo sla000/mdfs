@@ -1,1 +1,1 @@
-CONN_SERV_IP = ''
+CONN_SERV_IP = '127.0.0.1'

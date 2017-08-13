@@ -54,7 +54,7 @@ class ConnectionServerHandler(TcpBaseHandler):
     def handleConnection(self, sock, size, buf):
         req = buf.split('*')[0]
         if req == TopServerOnlineReq.SIG:
-            ip, port, topId = TopServerOnlineReq().parse(buf)
+            ip, port, topId = TopServerOnlineReq.parse(buf)
             if topId not in topInfo.keys():
                 topInfo[topId] = Neighbour(ip, int(port), self.getGuidForTop())
             else:
@@ -63,7 +63,7 @@ class ConnectionServerHandler(TcpBaseHandler):
             log.i('Top %s is online' % ip)
 
         if req == GetNeighboursReq.SIG:
-            topId = GetNeighboursReq().parse(buf)
+            topId = GetNeighboursReq.parse(buf)
 
             neighbours = [ ]
             for key in topInfo.keys():
@@ -71,8 +71,8 @@ class ConnectionServerHandler(TcpBaseHandler):
                     neighbours.append(topInfo[key])
                     
             log.i(neighbours)
-            log.i(GetNeighboursReqA().pkt(neighbours))
-            self.request.sendall(GetNeighboursReqA().pkt(neighbours))
+            log.i(GetNeighboursReqA.pkt(neighbours))
+            self.request.sendall(GetNeighboursReqA.pkt(neighbours))
 
         if req == ExitReq.SIG:
             self.stop()
@@ -117,13 +117,11 @@ class ConnectionServerClient:
         self.work = False
 
     def getNeighbours(self):
-        req = GetNeighboursReq()
-
         sock = getConnectedSock(self.addr[0], self.addr[1])
-        sendPkt(sock, req.pkt(self.ID))
+        sendPkt(sock,  GetNeighboursReq.pkt(self.ID))
         
         buf = recvPkt(sock)
-        nlist = GetNeighboursReqA().parse(buf)
+        nlist = GetNeighboursReqA.parse(buf)
         log.i('nlist = %s', str(nlist))
         return nlist
         
@@ -132,10 +130,10 @@ class ConnectionServerClient:
             try:
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 sock.connect(self.addr)
-                sock.sendall(TopServerOnlineReq().pkt(self.ip, self.port, self.ID))
+                sock.sendall(TopServerOnlineReq.pkt(self.ip, self.port, self.ID))
                 time.sleep(OFFLINE_TIME)
             except Exception as e:
-                log.e('ConnectionServerClient.main: ' + e.message)
+                log.e('ConnectionServerClient.main: ' + e.__class__ + ' ' + e.message)
 
 
 if __name__ == '__main__':
