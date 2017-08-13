@@ -22,6 +22,7 @@ class TopServerHandler(TcpBaseHandler):
     def stop(self):
         log.i('stopping')
         self.server.server_close()
+        self.server.connServClient.stop()
         os._exit(0)
 
 class TopServer(Daemon):
@@ -33,7 +34,7 @@ class TopServer(Daemon):
 
     def main(self):
         log.i('TopServer.main')
-        self.connServClient.daemonize()
+        self.connServClient.start()
         SocketServer.TCPServer.allow_reuse_address = True
         server = SocketServer.TCPServer(self.addr, TopServerHandler)
         server.serve_forever()
@@ -41,4 +42,4 @@ class TopServer(Daemon):
 if __name__ == '__main__':
     log.init('/tmp/topserver.log')
     top = TopServer(CONN_SERV_IP, getSelfIP(), 8000)
-    top.daemonize()
+    top.start()

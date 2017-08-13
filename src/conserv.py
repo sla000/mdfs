@@ -4,6 +4,7 @@ import sys
 
 import time
 
+from net import *
 from utils import *
 import uuid
 from log import *
@@ -43,9 +44,6 @@ class TcpBaseHandler(SocketServer.BaseRequestHandler):
     def handleConnection(self):
         raise Exception("Not implemented")
 
-
-
-
 GID = uuid.uuid4().hex
 topInfo = { }
 
@@ -62,6 +60,7 @@ class ConnectionServerHandler(TcpBaseHandler):
             else:
                 topInfo[topId].ip = ip
                 topInfo[topId].port = int(port)
+            log.i('Top %s is online' % ip)
 
         if req == GetNeighboursReq.SIG:
             topId = GetNeighboursReq().parse(buf)
@@ -96,42 +95,50 @@ class ConnectionServer(Daemon):
         self.server.server_close()
 
 
-class ConnectionServerClient(Daemon):
+class ConnectionServerClient:
     def __init__(self, ipConnServ, ip, port, ID):
         self.addr = (ipConnServ, CONN_SERV_PORT)
         self.ip = ip
         self.port = port
         self.ID = ID
-    def getConnServIP(self):
-        # TODO: fix it
-        return getSelfIP()
+        self.pid = -1
+        self.work = False
+
+    def start(self):
+        pid = os.fork()
+        if pid == 0:
+            self.work = True
+            self.main()
+        elif pid > 0:
+            self.pid = pid
+
+    def stop(self):
+        assert self.work == True
+        self.work = False
+
     def getNeighbours(self):
         req = GetNeighboursReq()
 
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect(self.addr)
-        sock.sendall(req.pkt(self.ID))
+        sock = getConnectedSock(self.addr[0], self.addr[1])
+        sendPkt(sock, req.pkt(self.ID))
         
-        md = sock.recv(2)
-        assert len(md) == 2
-        szStr = sock.recv(4)
-        assert len(szStr) == 4
-        sz = struct.unpack('<I', szStr)
-
-        buf = sock.recv(sz[0])
-        assert len(buf) == sz[0]
+        buf = recvPkt(sock)
         nlist = GetNeighboursReqA().parse(buf)
+        log.i('nlist = %s', str(nlist))
         return nlist
         
     def main(self):
-        while True:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect(self.addr)
-            sock.sendall(TopServerOnlineReq().pkt(self.ip, self.port, self.ID))
-            time.sleep(OFFLINE_TIME)
+        while self.work:
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.connect(self.addr)
+                sock.sendall(TopServerOnlineReq().pkt(self.ip, self.port, self.ID))
+                time.sleep(OFFLINE_TIME)
+            except Exception as e:
+                log.e('ConnectionServerClient.main: ' + e.message)
 
 
 if __name__ == '__main__':
     log.init('/tmp/connserv.log')
     s = ConnectionServer()
-    s.daemonize()
+    s.start()

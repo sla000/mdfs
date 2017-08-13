@@ -25,3 +25,4 @@ print mac.replace(tmp, s)
 "`
 sudo sed -i "s/$mac/$newmac/g" $path/$name/config
 
+sudo sed -i "s/$last/$name/g" $path/$name/config

@@ -25,5 +25,11 @@ def stopConnServ(ip):
     sock.close()
 
 if __name__ == '__main__':
-    stopTop(getSelfIP())
-    stopConnServ(getSelfIP())
+    try:
+        stopTop(getSelfIP())
+    except:
+        pass
+    try:
+        stopConnServ(getSelfIP())
+    except:
+        pass

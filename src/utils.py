@@ -2,6 +2,7 @@ import os
 import socket
 import struct
 
+from daemon import *
 
 def getSelfIP():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -18,27 +19,3 @@ def getSelfIP():
 def createPkt(len, buf):
     hdr = struct.pack("<ccI", 'm', 'd', len)
     return hdr + buf
-
-class Daemon():
-    def __init__(self):
-        self.pid = None
-    def daemonize(self):
-        pid = os.fork()
-        if pid == 0:
-            try:
-                self.main()
-            except:
-                pass
-            finally:
-                self.onexit()
-        else:
-            self.pid = pid
-            return pid
-    def kill(self):
-        os.kill(self.pid, 15)
-    def onexit(self):
-        pass
-
-    def main(self):
-        raise Exception("Not implemented.")
-
