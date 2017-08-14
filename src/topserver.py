@@ -10,15 +10,24 @@ class Top:
 
 gTop = Top()
 
+class TopServerReqHandler(ReqHandler):
+    def init(self):
+        map = {
+            ExitReq : self.onExit
+        }
+
+        for key in map.keys():
+            self._register(key, map[key])
+
+    def onExit(self):
+        log.i('onExit')
+        self.extra.stop()
+
 class TopServerHandler(TcpBaseHandler):
     def handleConnection(self, sock, size, buf):
-        log.i('size = ' + str(size))
-        log.i("buf: " + str(buf))
-        ip, port = self.server.server_address
+        reqHandler = TopServerReqHandler()
+        reqHandler.handle(buf)
 
-        req = buf.split('*')[0]
-        if req == ExitReq.SIG:
-            self.stop()
     def stop(self):
         log.i('stopping')
         self.server.server_close()
