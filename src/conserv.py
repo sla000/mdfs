@@ -1,81 +1,51 @@
-import socket
-import struct
-import sys
-
-import time
-
+from reqhandler import  *
 from net import *
-from utils import *
-import uuid
-from log import *
-from requests import *
-OFFLINE_TIME = 5
 
+OFFLINE_TIME = 5
 CONN_SERV_PORT=4545
 
-MAX_PKT_BUF_SIZE = 1024 * 1024 * 100
-
-
-
-import SocketServer
-
-class TcpBaseHandler(SocketServer.BaseRequestHandler):
-    """
-    The request handler class for our server.
-
-    It is instantiated once per connection to the server, and must
-    override the handle() method to implement communication to the
-    client.
-    """
-    def handle(self):
-        signature = self.request.recv(2)
-        size = -1
-        if signature == 'md':
-            sizeStr = self.request.recv(4)
-            size = struct.unpack("<I", sizeStr)[0]
-
-        if signature != 'md' or size < 0 or size > MAX_PKT_BUF_SIZE:
-            self.request.sendall(createPkt(8, 'Invalid'))
-            self.server.close_request(self.request)
-
-        buf = self.request.recv(int(size))
-        self.handleConnection(self.request, size, buf)
-
-    def handleConnection(self):
-        raise Exception("Not implemented")
 
 GID = uuid.uuid4().hex
 topInfo = { }
+class ConnectionServerReqHandler(ReqHandler):
+    def init(self):
+        map = {
+            ExitReq : self.onExit,
+            TopServerOnlineReq : self.onTopServerOnline,
+            GetNeighboursReq : self.onGetNeighbours
+        }
+
+        for key in map.keys():
+            self._register(key, map[key])
+    def onExit(self):
+        log.i('onExit')
+        self.extra.stop()
+    def onTopServerOnline(self, ip, port, topId):
+        log.i('Top %s is online' % ip)
+        if topId not in topInfo.keys():
+            topInfo[topId] = Neighbour(ip, int(port), self.extra.getGuidForTop())
+        else:
+            topInfo[topId].ip = ip
+            topInfo[topId].port = int(port)
+    def onGetNeighbours(self, topId):
+        neighbours = [ ]
+        for key in topInfo.keys():
+            if topInfo[key].gid == topInfo[topId].gid and key != topId:
+                neighbours.append(topInfo[key])
+
+        log.i(neighbours)
+        log.i(GetNeighboursReqA.pkt(neighbours))
+        self.extra.request.sendall(GetNeighboursReqA.pkt(neighbours))
 
 class ConnectionServerHandler(TcpBaseHandler):
+
     def getGuidForTop(self):
         return GID
 
     def handleConnection(self, sock, size, buf):
-        req = buf.split('*')[0]
-        if req == TopServerOnlineReq.SIG:
-            ip, port, topId = TopServerOnlineReq.parse(buf)
-            if topId not in topInfo.keys():
-                topInfo[topId] = Neighbour(ip, int(port), self.getGuidForTop())
-            else:
-                topInfo[topId].ip = ip
-                topInfo[topId].port = int(port)
-            log.i('Top %s is online' % ip)
+        reqHandler = ConnectionServerReqHandler(self)
+        reqHandler.handle(buf)
 
-        if req == GetNeighboursReq.SIG:
-            topId = GetNeighboursReq.parse(buf)
-
-            neighbours = [ ]
-            for key in topInfo.keys():
-                if topInfo[key].gid == topInfo[topId].gid and key != topId:
-                    neighbours.append(topInfo[key])
-                    
-            log.i(neighbours)
-            log.i(GetNeighboursReqA.pkt(neighbours))
-            self.request.sendall(GetNeighboursReqA.pkt(neighbours))
-
-        if req == ExitReq.SIG:
-            self.stop()
     def stop(self):
         log.i('stopping')
         self.server.server_close()
