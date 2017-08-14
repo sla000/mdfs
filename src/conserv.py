@@ -1,5 +1,6 @@
 from reqhandler import  *
 from net import *
+from db import *
 
 OFFLINE_TIME = 5
 CONN_SERV_PORT=4545
@@ -12,11 +13,15 @@ class ConnectionServerReqHandler(ReqHandler):
         map = {
             ExitReq : self.onExit,
             TopServerOnlineReq : self.onTopServerOnline,
-            GetNeighboursReq : self.onGetNeighbours
+            GetNeighboursReq : self.onGetNeighbours,
+            GetFileIDReq : self.onGetFileID
         }
 
         for key in map.keys():
             self._register(key, map[key])
+    def __sendResponcePkt(self, requestClass, *args):
+
+        self.extra.request.sendall(requestClass.pkt(args))
     def onExit(self):
         log.i('onExit')
         self.extra.stop()
@@ -35,7 +40,14 @@ class ConnectionServerReqHandler(ReqHandler):
 
         log.i(neighbours)
         log.i(GetNeighboursReqA.pkt(neighbours))
-        self.extra.request.sendall(GetNeighboursReqA.pkt(neighbours))
+        self.__sendResponcePkt(GetNeighboursReqA, neighbours)
+        #self.__sendResponcePkt(GetNeighboursReqA.pkt(neighbours))
+    def onGetFileID(self, fileHash):
+        db = ConnServDb()
+        fileID = db.getFileID(fileHash)
+        log.d('Got file ID [%s]. FileID = %s', fileHash, fileID)
+        self.__sendResponcePkt(GetFileIDResp, fileID)
+        #self.__sendResponcePkt(GetFileIDResp.pkt(fileID))
 
 class ConnectionServerHandler(TcpBaseHandler):
 
@@ -93,8 +105,18 @@ class ConnectionServerClient:
         buf = recvPkt(sock)
         nlist = GetNeighboursReqA.parse(buf)
         log.i('nlist = %s', str(nlist))
+        sock.close()
         return nlist
-        
+    def getFileID(self, fileHash):
+        ip, port = self.addr
+        sock = getConnectedSock(ip, port)
+        sendPkt(sock, GetFileIDReq.pkt(fileHash))
+        buf = recvPkt(sock)
+        fileID = GetFileIDResp.parse(buf)
+        sock.close()
+        log.d('GetFileIDReq: sended hash [%s], got FileID = %s', fileHash, fileID)
+        return fileID
+
     def main(self):
         while self.work:
             try:

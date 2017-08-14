@@ -77,6 +77,21 @@ class ExitReq(Pkt):
     def createInternal(cls):
         return ''
 
+class GetFileIDReq(Pkt):
+    SIG='GetFileIDRequest'
+    @classmethod
+    def parseInternal(cls, pkt):
+        return pkt
+    @classmethod
+    def createInternal(cls, fileHash):
+        return fileHash
 
-        
+class GetFileIDResp(Pkt):
+    SIG='GetFileIDResponse'
+    @classmethod
+    def parseInternal(cls, pkt):
+        return pkt
+    @classmethod
+    def createInternal(cls, fileID):
+        return fileID
 
