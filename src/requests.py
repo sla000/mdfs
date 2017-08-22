@@ -95,3 +95,11 @@ class GetFileIDResp(Pkt):
     def createInternal(cls, fileID):
         return fileID
 
+class AddSliceReq(Pkt):
+    SIG='AddSliceReq'
+    @classmethod
+    def parseInternal(cls, pkt):
+        return pkt
+    @classmethod
+    def createInternal(cls, sliceBuf):
+        return sliceBuf

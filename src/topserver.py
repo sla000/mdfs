@@ -2,7 +2,7 @@ from conserv import *
 import uuid
 from log import *
 from config import *
-
+from storage import *
 
 class Top:
     def __init__(self):
@@ -13,7 +13,8 @@ gTop = Top()
 class TopServerReqHandler(ReqHandler):
     def init(self):
         map = {
-            ExitReq : self.onExit
+            ExitReq : self.onExit,
+            AddSliceReq : self.addSlice
         }
 
         for key in map.keys():
@@ -22,6 +23,14 @@ class TopServerReqHandler(ReqHandler):
     def onExit(self):
         log.i('onExit')
         self.extra.stop()
+    def addSlice(self, sliceBuf):
+        log.i('AddSliceReq')
+        slice = Slice.fromBuf(sliceBuf)
+        storage = Storage()
+        if storage.put(slice) == False:
+            log.i('Slice %s already exists in storage' % str(slice.hdr.sid))
+
+
 
 class TopServerHandler(TcpBaseHandler):
     def handleConnection(self, sock, size, buf):
